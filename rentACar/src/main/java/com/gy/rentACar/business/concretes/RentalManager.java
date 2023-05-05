@@ -1,8 +1,10 @@
 package com.gy.rentACar.business.concretes;
 
 import com.gy.rentACar.business.abstracts.CarService;
+import com.gy.rentACar.business.abstracts.InvoiceService;
 import com.gy.rentACar.business.abstracts.PaymentService;
 import com.gy.rentACar.business.abstracts.RentalService;
+import com.gy.rentACar.business.dto.requests.create.CreateInvoiceRequest;
 import com.gy.rentACar.business.dto.requests.create.CreateRentalRequest;
 import com.gy.rentACar.business.dto.requests.update.UpdateRentalRequest;
 import com.gy.rentACar.business.dto.responses.create.CreateRentalResponse;
@@ -27,6 +29,7 @@ public class RentalManager implements RentalService {
     private final ModelMapper mapper;
     private final CarService carService;
     private final PaymentService paymentService;
+    private final InvoiceService invoiceService;
 
     @Override
     public List<GetAllRentalsResponse> getAll() {
@@ -51,14 +54,21 @@ public class RentalManager implements RentalService {
         rental.setTotalPrice(getTotalPrice(rental));
         rental.setStartDate(LocalDateTime.now());
 
-        CreateRentalPaymentRequest paymentRequest=new CreateRentalPaymentRequest();
-        mapper.map(request.getPaymentRequest(),paymentRequest);
+        //Create Payment
+        CreateRentalPaymentRequest paymentRequest = new CreateRentalPaymentRequest();
+        mapper.map(request.getPaymentRequest(), paymentRequest);
         paymentRequest.setPrice(getTotalPrice(rental));
         paymentService.processRentalPayment(paymentRequest);
-
         repository.save(rental);
         carService.changeState(request.getCarId(), State.RENTED);
         CreateRentalResponse response = mapper.map(rental, CreateRentalResponse.class);
+
+        //Create invoice
+        CreateInvoiceRequest invoiceRequest = new CreateInvoiceRequest();
+        invoiceRequest.setCarId(request.getCarId());
+        invoiceRequest.setModelName(carService.getById(request.getCarId()).getModel().getName());
+        invoiceRequest.setBrandName(carService.getById(request.getCarId()).getModel().getBrand().getName());
+        invoiceService.add()
         return response;
     }
 
@@ -85,13 +95,13 @@ public class RentalManager implements RentalService {
         return rental.getDailyPrice() * rental.getRentedForDays();
     }
 
-    private void checkIfCarAvailable(int carId){
-        if(!carService.getById(carId).getState().equals(State.AVAILABLE))
+    private void checkIfCarAvailable(int carId) {
+        if (!carService.getById(carId).getState().equals(State.AVAILABLE))
             throw new RuntimeException("Araç müsait değil.");
     }
 
-    private void checkIfRentalExists(int id){
-        if(!repository.existsById(id))
+    private void checkIfRentalExists(int id) {
+        if (!repository.existsById(id))
             throw new RuntimeException("Kiralama bilgisine ulaşılamadı !");
     }
 
