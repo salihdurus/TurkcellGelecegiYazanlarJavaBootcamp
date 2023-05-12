@@ -14,6 +14,7 @@ import com.gy.rentACar.business.dto.responses.get.GetRentalResponse;
 import com.gy.rentACar.business.dto.responses.update.UpdateRentalResponse;
 import com.gy.rentACar.business.rules.RentalBusinessRules;
 import com.gy.rentACar.core.dto.CreateRentalPaymentRequest;
+import com.gy.rentACar.entities.Car;
 import com.gy.rentACar.entities.Enums.State;
 import com.gy.rentACar.entities.Rental;
 import com.gy.rentACar.repository.RentalRepository;
@@ -57,6 +58,7 @@ public class RentalManager implements RentalService {
         rental.setTotalPrice(getTotalPrice(rental));
         rental.setStartDate(LocalDateTime.now());
 
+
         //Create Payment
         CreateRentalPaymentRequest paymentRequest = new CreateRentalPaymentRequest();
         mapper.map(request.getPaymentRequest(), paymentRequest);
@@ -67,9 +69,15 @@ public class RentalManager implements RentalService {
         CreateRentalResponse response = mapper.map(rental, CreateRentalResponse.class);
 
         //Create invoice
+
+        // Bu şekilde kullanım daha güzel olur.
+//        Car car = mapper.map(carService.getById(request.getCarId()), Car.class);
+//        rental.setCar(car);
+//        System.err.println(rental.getCar().getModel().getBrand().getName());
+//        System.err.println(rental.getCar().getModel().getName());
+
         CreateInvoiceRequest invoiceRequest = new CreateInvoiceRequest();
-        invoiceRequest.setCarId(request.getCarId());
-        createInvoiceRequest(request, response, invoiceRequest);
+        createInvoiceRequest(request, response, invoiceRequest, rental);
 
         invoiceService.add(invoiceRequest);
         return response;
@@ -98,9 +106,10 @@ public class RentalManager implements RentalService {
         return rental.getDailyPrice() * rental.getRentedForDays();
     }
 
-    private void createInvoiceRequest(CreateRentalRequest request, CreateRentalResponse response, CreateInvoiceRequest invoiceRequest) {
+    private void createInvoiceRequest(CreateRentalRequest request, CreateRentalResponse response, CreateInvoiceRequest invoiceRequest, Rental rental) {
         GetCarResponse car = carService.getById(request.getCarId());
 
+        invoiceRequest.setRentedAt(rental.getStartDate());
         invoiceRequest.setModelName(car.getModel().getName());
         invoiceRequest.setBrandName(car.getModel().getBrand().getName());
         invoiceRequest.setDailyPrice(request.getDailyPrice());

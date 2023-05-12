@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @Setter
 public class GetAllInvoiceResponse {
     private int id;
-    private int carId;
     private String cardHolder;
     private String modelName;
     private String brandName;
