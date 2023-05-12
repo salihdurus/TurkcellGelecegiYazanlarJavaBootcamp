@@ -9,8 +9,10 @@ import com.gy.rentACar.business.dto.requests.create.CreateRentalRequest;
 import com.gy.rentACar.business.dto.requests.update.UpdateRentalRequest;
 import com.gy.rentACar.business.dto.responses.create.CreateRentalResponse;
 import com.gy.rentACar.business.dto.responses.get.GetAllRentalsResponse;
+import com.gy.rentACar.business.dto.responses.get.GetCarResponse;
 import com.gy.rentACar.business.dto.responses.get.GetRentalResponse;
 import com.gy.rentACar.business.dto.responses.update.UpdateRentalResponse;
+import com.gy.rentACar.business.rules.RentalBusinessRules;
 import com.gy.rentACar.core.dto.CreateRentalPaymentRequest;
 import com.gy.rentACar.entities.Enums.State;
 import com.gy.rentACar.entities.Rental;
@@ -30,6 +32,7 @@ public class RentalManager implements RentalService {
     private final CarService carService;
     private final PaymentService paymentService;
     private final InvoiceService invoiceService;
+    private final RentalBusinessRules rules;
 
     @Override
     public List<GetAllRentalsResponse> getAll() {
@@ -40,7 +43,7 @@ public class RentalManager implements RentalService {
 
     @Override
     public GetRentalResponse getById(int id) {
-        checkIfRentalExists(id);
+        rules.checkIfRentalExists(id);
         Rental rental = repository.findById(id).orElseThrow();
         GetRentalResponse response = mapper.map(rental, GetRentalResponse.class);
         return response;
@@ -48,7 +51,7 @@ public class RentalManager implements RentalService {
 
     @Override
     public CreateRentalResponse add(CreateRentalRequest request) {
-        checkIfCarAvailable(request.getCarId());
+        rules.checkIfCarAvailable(carService.getById(request.getCarId()).getState());
         Rental rental = mapper.map(request, Rental.class);
         rental.setId(0);
         rental.setTotalPrice(getTotalPrice(rental));
@@ -66,15 +69,15 @@ public class RentalManager implements RentalService {
         //Create invoice
         CreateInvoiceRequest invoiceRequest = new CreateInvoiceRequest();
         invoiceRequest.setCarId(request.getCarId());
-        invoiceRequest.setModelName(carService.getById(request.getCarId()).getModel().getName());
-        invoiceRequest.setBrandName(carService.getById(request.getCarId()).getModel().getBrand().getName());
-        invoiceService.add()
+        createInvoiceRequest(request, response, invoiceRequest);
+
+        invoiceService.add(invoiceRequest);
         return response;
     }
 
     @Override
     public UpdateRentalResponse update(int id, UpdateRentalRequest request) {
-        checkIfRentalExists(id);
+        rules.checkIfRentalExists(id);
         Rental rental = mapper.map(request, Rental.class);
         rental.setId(id);
         rental.setTotalPrice(getTotalPrice(rental));
@@ -85,7 +88,7 @@ public class RentalManager implements RentalService {
 
     @Override
     public void delete(int id) {
-        checkIfRentalExists(id);
+        rules.checkIfRentalExists(id);
         int carId = repository.findById(id).get().getCar().getId();
         carService.changeState(carId, State.AVAILABLE);
         repository.deleteById(id);
@@ -95,14 +98,15 @@ public class RentalManager implements RentalService {
         return rental.getDailyPrice() * rental.getRentedForDays();
     }
 
-    private void checkIfCarAvailable(int carId) {
-        if (!carService.getById(carId).getState().equals(State.AVAILABLE))
-            throw new RuntimeException("Araç müsait değil.");
-    }
+    private void createInvoiceRequest(CreateRentalRequest request, CreateRentalResponse response, CreateInvoiceRequest invoiceRequest) {
+        GetCarResponse car = carService.getById(request.getCarId());
 
-    private void checkIfRentalExists(int id) {
-        if (!repository.existsById(id))
-            throw new RuntimeException("Kiralama bilgisine ulaşılamadı !");
+        invoiceRequest.setModelName(car.getModel().getName());
+        invoiceRequest.setBrandName(car.getModel().getBrand().getName());
+        invoiceRequest.setDailyPrice(request.getDailyPrice());
+        invoiceRequest.setPlate(car.getPlate());
+        invoiceRequest.setCardHolder(request.getPaymentRequest().getCardHolder());
+        invoiceRequest.setModelYear(car.getModelYear());
+        invoiceRequest.setRentedForDays(response.getRentedForDays());
     }
-
 }
