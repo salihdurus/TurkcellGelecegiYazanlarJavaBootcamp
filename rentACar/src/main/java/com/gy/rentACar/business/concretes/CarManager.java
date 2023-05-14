@@ -7,6 +7,8 @@ import com.gy.rentACar.business.dto.responses.create.CreateCarResponse;
 import com.gy.rentACar.business.dto.responses.get.GetAllCarsResponse;
 import com.gy.rentACar.business.dto.responses.get.GetCarResponse;
 import com.gy.rentACar.business.dto.responses.update.UpdateCarResponse;
+import com.gy.rentACar.business.rules.CarBusinessRules;
+import com.gy.rentACar.common.constants.Messages;
 import com.gy.rentACar.entities.Car;
 import com.gy.rentACar.entities.Enums.State;
 import com.gy.rentACar.repository.CarRepository;
@@ -21,6 +23,7 @@ import java.util.List;
 public class CarManager implements CarService {
     private final CarRepository repository;
     private final ModelMapper mapper;
+    private final CarBusinessRules rules;
 
     @Override
     public List<GetAllCarsResponse> getAll(boolean includeMaintenance) {
@@ -31,7 +34,7 @@ public class CarManager implements CarService {
 
     @Override
     public GetCarResponse getById(int id) {
-        checkIfCarExists(id);
+        rules.checkIfCarExists(id);
         Car car =repository.findById(id).orElseThrow();
         GetCarResponse response = mapper.map(car,GetCarResponse.class);
         return response;
@@ -48,7 +51,7 @@ public class CarManager implements CarService {
 
     @Override
     public UpdateCarResponse update(int id, UpdateCarRequest request) {
-        checkIfCarExists(id);
+        rules.checkIfCarExists(id);
         Car car = mapper.map(request,Car.class);
         car.setId(id);
         return mapper.map(repository.save(car),UpdateCarResponse.class);
@@ -56,7 +59,7 @@ public class CarManager implements CarService {
 
     @Override
     public void delete(int id) {
-        checkIfCarExists(id);
+        rules.checkIfCarExists(id);
         repository.deleteById(id);
     }
 
@@ -71,15 +74,9 @@ public class CarManager implements CarService {
 
     @Override
     public void changeState(int carId, State state) {
-        checkIfCarExists(carId);
+        rules.checkIfCarExists(carId);
         Car car = repository.findById(carId).orElseThrow();
         car.setState(state);
         repository.save(car);
-    }
-
-    private void checkIfCarExists(int id) {
-        if(!repository.existsById(id)){
-            throw new RuntimeException("Böyle bir araç bulunamadı!");
-        }
     }
 }

@@ -6,7 +6,7 @@ import com.gy.rentACar.business.dto.responses.create.CreatePaymentResponse;
 import com.gy.rentACar.business.dto.responses.get.GetAllPaymentsResponse;
 import com.gy.rentACar.business.dto.responses.get.GetPaymentResponse;
 import com.gy.rentACar.business.dto.responses.update.UpdatePaymentResponse;
-import com.gy.rentACar.core.dto.CreateRentalPaymentRequest;
+import com.gy.rentACar.common.dto.CreateRentalPaymentRequest;
 
 import java.util.List;
 

@@ -7,6 +7,7 @@ import com.gy.rentACar.business.dto.responses.create.CreateInvoiceResponse;
 import com.gy.rentACar.business.dto.responses.get.GetAllInvoiceResponse;
 import com.gy.rentACar.business.dto.responses.get.GetInvoiceResponse;
 import com.gy.rentACar.business.dto.responses.update.UpdateInvoiceResponse;
+import com.gy.rentACar.business.rules.InvoiceBusinessRules;
 import com.gy.rentACar.entities.Invoice;
 import com.gy.rentACar.repository.InvoiceRepository;
 import lombok.AllArgsConstructor;
@@ -21,6 +22,7 @@ import java.util.List;
 public class InvoiceManager implements InvoiceService {
     private final InvoiceRepository repository;
     private final ModelMapper mapper;
+    private final InvoiceBusinessRules rules;
 
     @Override
     public List<GetAllInvoiceResponse> getAll() {
@@ -34,7 +36,7 @@ public class InvoiceManager implements InvoiceService {
 
     @Override
     public GetInvoiceResponse getById(int id) {
-        checkIfInvoiceExists(id);
+        rules.checkIfInvoiceExists(id);
         Invoice invoice = repository.findById(id).orElseThrow();
         GetInvoiceResponse response = mapper.map(invoice,GetInvoiceResponse.class);
         return response;
@@ -51,7 +53,7 @@ public class InvoiceManager implements InvoiceService {
     }
     @Override
     public UpdateInvoiceResponse update(int id, UpdateInvoiceRequest request) {
-        checkIfInvoiceExists(id);
+        rules.checkIfInvoiceExists(id);
         Invoice invoice=mapper.map(request,Invoice.class);
         invoice.setId(id);
         invoice.setTotalPrice(getTotalPrice(invoice));
@@ -62,7 +64,7 @@ public class InvoiceManager implements InvoiceService {
 
     @Override
     public void delete(int id) {
-        checkIfInvoiceExists(id);
+        rules.checkIfInvoiceExists(id);
         repository.deleteById(id);
     }
 
@@ -70,9 +72,5 @@ public class InvoiceManager implements InvoiceService {
         return invoice.getDailyPrice() * invoice.getRentedForDays();
     }
 
-    private void checkIfInvoiceExists(int id){
-        if(!repository.existsById(id)){
-            throw new RuntimeException("Fatura bilgisine ulaşılamadı !");
-        }
-    }
+
 }
