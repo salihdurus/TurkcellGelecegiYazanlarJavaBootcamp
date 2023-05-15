@@ -42,6 +42,7 @@ public class CarManager implements CarService {
 
     @Override
     public CreateCarResponse add(CreateCarRequest request) {
+        rules.checkIfCarExistsByPlate(request.getPlate());
         Car car=mapper.map(request,Car.class);
         car.setState(State.AVAILABLE);
         repository.save(car);
