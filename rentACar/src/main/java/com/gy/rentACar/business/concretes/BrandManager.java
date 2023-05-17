@@ -12,6 +12,8 @@ import com.gy.rentACar.entities.Brand;
 import com.gy.rentACar.repository.BrandRepository;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -25,6 +27,7 @@ public class BrandManager implements BrandService {
     private final BrandBusinessRules rules;
 
     @Override
+    @Cacheable(value = "brand_list")
     public List<GetAllBrandsResponse> getAll() {
         List<Brand> brands = repository.findAll();
 
@@ -43,6 +46,7 @@ public class BrandManager implements BrandService {
     }
 
     @Override
+    @CacheEvict(value = "brand_list", allEntries = true)
     public CreateBrandResponse add(CreateBrandRequest request) {
         rules.checkIfBrandExistsByName(request.getName());
         Brand brand = mapper.map(request, Brand.class);
@@ -51,6 +55,7 @@ public class BrandManager implements BrandService {
     }
 
     @Override
+    @CacheEvict(value = "brand_list", allEntries = true)
     public UpdateBrandResponse update(int id, UpdateBrandRequest request) {
         rules.checkIfBrandExistsById(id);
         Brand brand = mapper.map(request, Brand.class);
@@ -60,6 +65,7 @@ public class BrandManager implements BrandService {
     }
 
     @Override
+    @CacheEvict(value = "brand_list", allEntries = true)
     public void delete(int id) {
         rules.checkIfBrandExistsById(id);
         repository.deleteById(id);

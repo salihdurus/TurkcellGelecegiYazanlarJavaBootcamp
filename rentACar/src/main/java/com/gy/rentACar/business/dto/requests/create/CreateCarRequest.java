@@ -1,6 +1,8 @@
 package com.gy.rentACar.business.dto.requests.create;
 
+import com.gy.rentACar.common.constants.Messages;
 import com.gy.rentACar.common.constants.Regex;
+import com.gy.rentACar.common.utils.annotations.NotFutureYear;
 import com.gy.rentACar.entities.Model;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -18,18 +20,13 @@ import java.time.Year;
 @Getter
 @Setter
 public class CreateCarRequest {
-    @NotNull
+    @Min(0)
     private int modelId;
-
-    @NotNull
     @Min(1990)
-    @Max(2023)
+    @NotFutureYear
     private int modelYear;
-
-    @Pattern(regexp = Regex.Plate,message = "Plate number must match the pattern")
+    @Pattern(regexp = Regex.Plate ,message = Messages.Car.PlateNotValid)
     private String plate;
-
-    @NotNull
     @Min(1)
     @Max(100000)
     private double dailyPrice;
